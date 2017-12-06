@@ -147,7 +147,7 @@
             </div>
             <v-divider></v-divider>
 
-            <div style="padding-bottom:10px;padding-top:10px;" v-if="transaksi.picBukti">
+            <div style="padding-bottom:10px;padding-top:10px;">
               <b>Bukti</b>
               <div style="padding-top:7px;">
                 <img :src="picBukti" alt="" style="width:100%;">    

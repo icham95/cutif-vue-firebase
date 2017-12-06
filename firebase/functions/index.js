@@ -2,6 +2,48 @@ const functions = require('firebase-functions')
 const admin = require('firebase-admin')
 admin.initializeApp(functions.config().firebase)
 
+exports.hello = functions.https.onRequest((req, resp) => {
+    resp.json({
+        'query': req.query,
+        'body': req.body
+    })
+})
+
+exports.createUser = functions.https.onRequest((req, resp) => {
+    if (req.method == 'POST') {
+        let token = req.body.token
+        let npm = req.body.npm
+        let password = req.body.password
+        admin.auth().verifyIdToken(token)
+        .then(decodeToken => {
+            admin.auth().createUser({
+                email: npm + '@user.user',
+                password: password
+            }).then(user => {
+                resp.json({
+                    succes: true,
+                    user: user
+                })
+            }).catch(err => {
+                resp.json({
+                    succes: false,
+                    err: err
+                })
+            })
+        }).catch(err => {
+            resp.json({
+                succes: false,
+                err: err
+            })
+        })
+    } else {
+        resp.json({
+            succes: false,
+            err: 'request method/verb harus post, sekian terima kasih.'
+        })
+    }
+})
+
 exports.onCreateCuti = functions.database
 .ref('/cuti/{pushId}')
 .onCreate(event => {
