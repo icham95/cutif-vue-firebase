@@ -9,7 +9,28 @@ exports.hello = functions.https.onRequest((req, resp) => {
     })
 })
 
+exports.updateUser = functions.https.onRequest((req, resp) => {
+  resp.set('Access-Control-Allow-Origin', "*")
+  resp.set('Access-Control-Allow-Headers', "Origin, X-Requested-With, Content-Type, Accept,")
+  resp.set('Access-Control-Allow-Methods', 'GET, PUT')
+
+  if (req.method == 'PUT') {
+    let token = req.body.token
+    admin.auth().verifyIdToken(token)
+    .then(decodeToken => {
+      resp.json(decodeToken)
+    })
+  } else {
+    resp.json({
+      err: 'request method/verb harus put, sekian dan terima kasih.'
+    })
+  }
+})
+
 exports.createUser = functions.https.onRequest((req, resp) => {
+    resp.set('Access-Control-Allow-Origin', "*")
+    resp.set('Access-Control-Allow-Headers', "Origin, X-Requested-With, Content-Type, Accept,")
+    resp.set('Access-Control-Allow-Methods', 'GET, POST')
     if (req.method == 'POST') {
         let token = req.body.token
         let npm = req.body.npm
@@ -20,15 +41,30 @@ exports.createUser = functions.https.onRequest((req, resp) => {
                 email: npm + '@user.user',
                 password: password
             }).then(user => {
-                resp.json({
-                    succes: true,
-                    user: user
-                })
+              let updates = {}
+              let post = {
+                fullname: req.body.fullname,
+                alamat: req.body.alamat,
+                noHp: req.body.noHp,
+                role: req.body.role
+              }
+              if (post.role == 2) {
+                post.npm = npm
+                post.programStudi = req.body.programStudi
+                post.tahunAkademik = req.body.tahunAkademik
+                updates['/programStudi/' + req.body.programStudi + '/users/' + user.uid] = true
+              }
+              updates['/users/' + user.uid] = post
+              admin.database().ref().update(updates)
+              resp.json({
+                  succes: true,
+                  user: user
+              })
             }).catch(err => {
-                resp.json({
-                    succes: false,
-                    err: err
-                })
+              resp.json({
+                  succes: false,
+                  err: err
+              })
             })
         }).catch(err => {
             resp.json({

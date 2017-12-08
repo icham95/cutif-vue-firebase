@@ -15,6 +15,7 @@ Vue.use(Toasted, {
 
 var VueFire = require('vuefire')
 Vue.prototype.$urlphp = 'http://localhost/project/cutif/admin-php/'
+Vue.prototype.$urlFirebase = 'http://us-central1-cutif-bbde7.cloudfunctions.net/'
 
 Vue.use(VueFire)
 

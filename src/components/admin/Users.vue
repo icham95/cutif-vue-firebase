@@ -58,13 +58,6 @@
                 clearable
               ></v-text-field>
               <v-text-field
-                v-if="form.id == false"
-                label="Email"
-                v-model="form.email"
-                clearable
-              ></v-text-field>
-              <v-text-field
-                v-if="form.id == false"
                 label="Password"
                 v-model="form.password"
                 clearable
@@ -103,8 +96,7 @@
           @keyup.native.enter.prevent="search()"
           label="Pencarian nama"
           ></v-text-field>
-          <v-list v-for="item in users" two-line
-          style="padding:0;">
+          <v-list v-for="item in users" two-line style="padding:0;">
             <v-list-tile avatar @click="">
               <v-list-tile-avatar>
                 <v-icon> account_box </v-icon>
@@ -145,7 +137,7 @@
 <script>
   import axios from 'axios'
   import fb from '@/firebase.js'
-  import fb2 from '@/firebase2.js'
+//   import fb2 from '@/firebase2.js'
   import {mapGetters} from 'vuex'
   export default {
     data () {
@@ -168,8 +160,9 @@
           alamat: null,
           noHp: null,
           email: null,
-          password: null,
-          role: 2
+          password: 'STIKOM',
+          role: 2,
+          old_npm: null
         },
         tahunAkademik: [],
         roles: [
@@ -206,39 +199,25 @@
         this.$toasted.show('Proses..', {
           duration: null
         })
-        let user
-        if (skipUser === false) {
-          user = await fb2.auth().createUserWithEmailAndPassword(this.form.email, this.form.password)
-        } else {
-          user = skipUser
-        }
-        let updates = {}
-        let post = {
-          fullname: this.form.fullname,
-          alamat: this.form.alamat,
-          noHp: this.form.noHp,
-          role: this.form.role
-        }
-        if (this.form.role === 2) {
-          post.npm = this.form.npm
-          post.programStudi = this.form.programStudi['.key']
-          post.tahunAkademik = this.form.tahunAkademik
-          updates['/programStudi/' + this.form.programStudi['.key'] + '/users/' + user.uid] = true
-        }
-        updates['/users/' + user.uid] = post
-        try {
-          fb.database().ref().update(updates)
-        } catch (err) {
-          console.log(err)
-          this.$toasted.clear()
-          this.$toasted.show('retrying.. something errors : ' + err)
-          this.create(user)
-        }
-        fb2.auth().signOut()
-        this.$toasted.clear()
-        this.$toasted.show('Success.')
-        this.reset()
-        this.loading = false
+        fb.auth().currentUser.getIdToken(true)
+        .then(token => {
+          axios.post(this.$urlFirebase + 'createUser', {
+            npm: this.form.npm,
+            password: this.form.password,
+            token: token,
+            fullname: this.form.fullname,
+            alamat: this.form.alamat,
+            noHp: this.form.noHp,
+            role: this.form.role,
+            programStudi: this.form.programStudi['.key'],
+            tahunAkademik: this.form.tahunAkademik
+          }).then(resp => {
+            this.$toasted.clear()
+            this.$toasted.show('Success.')
+            this.reset()
+            this.loading = false
+          })
+        })
       },
       trash (item) {
         let r = confirm('uh oh, yakin dihapus ?')
@@ -276,6 +255,7 @@
         this.form.id = item['.key']
         if (item.role === 2) {
           this.form.npm = item.npm
+          this.form.old_npm = item.npm
           this.form.programStudi = this.findProgramStudi(item)
           this.form.tahunAkademik = item.tahunAkademik
         }
@@ -284,28 +264,30 @@
         this.form.alamat = item.alamat
         this.form.noHp = item.noHp
         this.userUpdateTemp = item
+        this.form.password = 'STIKOM'
       },
       update () {
         this.loading = true
-        let put = {
-          fullname: this.form.fullname,
-          alamat: this.form.alamat,
-          noHp: this.form.noHp,
-          role: this.form.role
-        }
-        if (this.form.role === 2) {
-          put.npm = this.form.npm
-          put.programStudi = this.form.programStudi['.key']
-          put.tahunAkademik = this.form.tahunAkademik
-        }
-        let push = {}
-        push['users/' + this.form.id] = put
-        push['programStudi/' + this.userUpdateTemp.programStudi + '/users/' + this.form.id] = null
-        push['programStudi/' + this.form.programStudi['.key'] + '/users/' + this.form.id] = true
-        fb.database().ref().update(push)
-        this.reset()
-        this.$toasted.show('Success.')
-        this.loading = false
+        fb.auth().currentUser.getIdToken(true)
+        .then(token => {
+          axios.put(this.$urlFirebase + 'updateUser', {
+            npm: this.form.npm,
+            password: this.form.password,
+            token: token,
+            fullname: this.form.fullname,
+            alamat: this.form.alamat,
+            noHp: this.form.noHp,
+            role: this.form.role,
+            programStudi: this.form.programStudi['.key'],
+            tahunAkademik: this.form.tahunAkademik
+          }).then(resp => {
+            console.log(resp)
+            this.$toasted.clear()
+            this.$toasted.show('Success.')
+            this.reset()
+            this.loading = false
+          })
+        })
       },
       reset () {
         this.form.id = false

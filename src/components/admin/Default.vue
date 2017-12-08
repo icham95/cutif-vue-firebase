@@ -103,9 +103,9 @@
       getUser () {
         this.cekLogin()
       }
-    },
-    mounted () {
-      this.cekLogin()
     }
+    // mounted () {
+    //   this.cekLogin()
+    // }
   }
 </script>
